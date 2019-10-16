@@ -1,6 +1,6 @@
-import requests, time, os, platform, datetime, openpyxl, random, subprocess, tqdm, urllib
+import requests, time, os, platform, datetime,
+       openpyxl, random, subprocess, tqdm, urllib
 from bs4 import BeautifulSoup
-#from collections import OrderedDict
 
 url_sc = 'https://avto-yslyga.ru/wp-content/themes/auto/template-parts/check-inspection-handler.php'
 url_ref = 'https://avto-yslyga.ru/proverit-tekhosmotr/'
