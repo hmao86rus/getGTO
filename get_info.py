@@ -1,6 +1,6 @@
-import requests, time, os, platform, datetime,
-       openpyxl, random, subprocess, tqdm, urllib
+import requests, time, timeit, os, platform, datetime, openpyxl, random, subprocess, tqdm, urllib
 from bs4 import BeautifulSoup
+
 
 url_sc = 'https://avto-yslyga.ru/wp-content/themes/auto/template-parts/check-inspection-handler.php'
 url_ref = 'https://avto-yslyga.ru/proverit-tekhosmotr/'
@@ -24,8 +24,6 @@ def getKey(req):
         code.write(req.content)
         code.close()
 
-#while(len(NUMBER) < 8 or len(NUMBER) > 9):
-    #NUMBER = str(input("Введите государственный номер ТС без пробелов: ")) 
 def getGto(num):
     with requests.Session() as session:
         rk = session.get(url_ref) # Получаем страницу с формой логина
@@ -45,7 +43,7 @@ def getGto(num):
         KEY = objs[5].contents[1].get('value')
         dann = dict(regNumber = num, key = KEY) # Данные в виде словаря, которые будут отправляться в POST
         r = session.post(url_sc, dann, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2224.3 Safari/537.36'}) # Отправляем данные в POST, в session записываются наши куки  
-    #print(r.text) # Дальше делайте с вашими данными все что захотите
+    
         with open("result.txt", "wb") as text:
             text.write(r.content)
             text.close()
@@ -57,18 +55,9 @@ def getGto(num):
     sp = BeautifulSoup(data_html, 'html.parser')
     my_data = sp.findAll(lambda tag: tag.name == 'b')
     return my_data
-    #print("Номер диагностической карты: ", my_data[0].text)
-    #print("Марка ТС: ", my_data[1].text)
-    #print("VIN ТС: ", my_data[2].text)
-    #print("Номер кузова ТС: ", my_data[3].text)
-    #print("Государственный номер: ", my_data[4].text)
-    #print("Дата прохождения техосмотра: ", my_data[5].text)
-    #print("Срок действия диагностической карты: ", my_data[6].text)
-    #print("Оператор техосмотра: ", my_data[7].text)
-
+    
 while not internet:
     try:
-        #subprocess.check_call(["ping", "-c 1", "www.google.com"])
         urllib.request.urlopen("http://google.com")
         print("Идет подключение к интернету")
         for i in tqdm.trange(100):
@@ -76,6 +65,7 @@ while not internet:
         internet = True
     except IOError:
         print("Отсутствует подключение к интернету!")
+        return
 
 if internet == True and os.path.exists('spisok.xlsx'):
     print("Начата загрузка данных...")
@@ -92,7 +82,11 @@ if internet == True and os.path.exists('spisok.xlsx'):
     for i in range(2, sht.max_row+1):
         #print(sht.cell(row=i, column=1).value)
         gos_num = sht.cell(row=i, column=1).value
+        print(gos_num + " - Поиск информации...")
         get_data = getGto(gos_num)
+        t = timeit.timeit("getGto(gos_num)", setup="from __main__ import getGto, gos_num", number=1)
+        for j in tqdm.tqdm(range(int(t))):
+            time.sleep(0.01)
         if len(get_data) > 0:
             sht.cell(row=i, column=2).value = get_data[0].text
             sht.cell(row=i, column=3).value = get_data[1].text
@@ -101,9 +95,10 @@ if internet == True and os.path.exists('spisok.xlsx'):
             sht.cell(row=i, column=6).value = get_data[5].text
             sht.cell(row=i, column=7).value = get_data[6].text
             sht.cell(row=i, column=8).value = get_data[7].text
+            print("Найдена карта № " + get_data[0].text)
             time.sleep(random.randint(150, 180)/10)
-        #print(get_data)
-        #wb.save('spisok.xlsx')
+        else:
+            print("Карта не найдена.")
     wb.save('spisok.xlsx')
             
 else:
